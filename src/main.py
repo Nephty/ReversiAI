@@ -1,6 +1,7 @@
 """
 A Reversi AI.
 Conventions :
+
 a) Cells & colors
     - White : True
     - Black : False
@@ -27,32 +28,34 @@ import matplotlib.pyplot as plt
 
 
 board_length = 8
+whiteBot = AI(color=True, board_length=8)
 blackBot = RandomAI(color=False)
 ai_wins = 0
-n = 500
+n = 1
 begin = time()
-
-whiteBot = AI(color=True, board_length=8)
 
 for i in range(1, n+1):
     print(i)
-    board = Board()
-    game = Game(board=board)
-
+    game = Game()  # ~ 1ms to create the board
     playing = True
     turn = True  # color of whose turn it is
-    verbose = False
-
+    verbose = True
     while playing:
+        print("\n"*20)
+        print("SPACER")
         if turn:
             # takeDecision represents ~1% of computational time whereas playMove represents ~99%
             if len(game.getWhitePlayablePositions()) > 0:
                 decision = whiteBot.takeDecision(game)
+                print("took decision") # TODO DOUBLE CALL TO CHECK PLAYABLE ? RUN AND SEE CONSOLE, SEEMS TO BE RAN TWICE IN PLAY MOVE
                 game.playMove(decision, True, verbose=verbose)
+                print("played move")
         else:
             if len(game.getBlackPlayablePositions()) > 0:
                 decision = blackBot.takeDecision(game)
+                print("took decision")
                 game.playMove(decision, False, verbose=verbose)
+                print("played move")
         turn = not turn
         if game.isFinished():
             playing = False
@@ -61,12 +64,13 @@ for i in range(1, n+1):
                 ai_wins += 1
 end = time()
 
+
 print(f"Summary :\n"
       f"{n} games played over {round(end - begin, 1)} seconds ({round((end - begin)/n, 3)} sec/game).\n"
       f"{ai_wins} wins for the AI.\n"
-      f"{random_ai_wins} wins for the random AI.\n"
+      f"{n - ai_wins} wins for the random AI.\n"
       f"\n"
-      f"{ai_wins} - {random_ai_wins} => {round(100*ai_wins/n, 2)}% win rate for the AI.")
+      f"{ai_wins} - {n - ai_wins} => {round(100*ai_wins/n, 2)}% win rate for the AI.")
 
 """"
 for diag_next in range(6):

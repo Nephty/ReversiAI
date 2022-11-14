@@ -170,16 +170,20 @@ whole_turn_times = [0.0021703243255615234, 0.0021266937255859375, 0.002259016036
 elapsed_times = [sum(whole_turn_times[0:i]) for i in range(len(whole_turn_times))]
 derivative_of_elapsed_times = []
 
-for i in range(len(elapsed_times)):
-    if i != 0:
-        derivative_of_elapsed_times.append(elapsed_times[i] - elapsed_times[i - 1])
+number_of_calls_to_upper_neighbor_method_per_game = [12678, 12108, 11806, 12211, 12200, 12097, 12333, 11373, 11128, 11631, 11558, 12111, 11742, 11984, 11965, 12099, 11897, 11939, 12196, 11644, 11824, 11449, 10988, 12081, 11595, 11461, 11595, 12205, 11900, 11552, 12236, 11208, 11394, 11585, 12428, 11163, 11897, 11675, 10955, 12226, 12021, 11609, 12729, 11884, 12043, 12085, 11375, 11725, 12812, 12468, 12048, 11037, 11611, 12196, 12448, 12356, 13099, 12485, 11698, 11682, 12375, 12162, 11940, 12671, 12163, 11331, 11988, 11832, 12214, 12529, 11227, 11550, 11544, 11100, 12013, 11377, 11349, 12287, 11980, 12139, 11946, 12096, 13147, 11955, 11653, 11762, 10464, 10738, 12631, 12386, 12320, 11284, 12042, 11128, 12286, 12544, 11282, 11309, 11749, 12443]
+print(sum(number_of_calls_to_upper_neighbor_method_per_game)/len(number_of_calls_to_upper_neighbor_method_per_game))
 
-lst = None
+#for i in range(len(elapsed_times)):
+#    if i != 0:
+#        derivative_of_elapsed_times.append(elapsed_times[i] - elapsed_times[i - 1])
+
+lst = number_of_calls_to_upper_neighbor_method_per_game
 # plt.plot(list(range(len(move_turn_times))), move_turn_times, '-r', label='moves')
 # plt.plot(list(range(len(game_finished_check_times))), game_finished_check_times, '-b', label='finish check')
 # plt.plot(list(range(len(whole_turn_times))), whole_turn_times, '-m', label='total per turn')
 # plt.plot(list(range(len(elapsed_times))), elapsed_times, '-g', label='total')
-plt.plot(list(range(len(derivative_of_elapsed_times))), derivative_of_elapsed_times, '-b', label='derivative')
+plt.plot(list(range(len(lst))), lst, '-b', label='#calls')
+plt.ylim([0, 15000])
 plt.legend(loc='upper right')
 plt.show()
 """

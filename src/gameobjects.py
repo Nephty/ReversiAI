@@ -65,6 +65,11 @@ class Board:
                 board_as_str += f"{value}{' ' * trailing_spaces_count}"
         return board_as_str
 
+    def getColumnUpwards(self, index):
+        col = []
+        step = - self.length
+        col.append(i for i in range(index + step, -1, step))
+
     def getPlayablePositions(self, color: bool) -> tuple[int, ...]:
         """Returns all playable positions as indices for the given color following the board convention."""
         if color:
@@ -188,13 +193,14 @@ class Board:
         positions and a black position.
         """
         # TODO : this method represents ~66% of the entire game's time if we add up all calls to it
+        print(f"Checked if {index} is playable by direction {direction}")
         # check if the position is available
         if self.board[index] is not None:
             return False
 
         # the right method to check for neighbors
         # and how the iterator will vary (go up, right, down or left by changing the index)
-        checkNeighborMethod, incrementIteratorBy = self._matchDirectionToCheckNeighborMethodAndIteratorIncrement(direction)
+        checkNeighborMethod, step = self._matchDirectionToCheckNeighborMethodAndIteratorIncrement(direction)
 
         # check that there is at least two neighbors in the given direction
         if checkNeighborMethod(index) is None:
@@ -212,17 +218,17 @@ class Board:
         #   - if we have not encountered any enemy yet : original position is not playable :(
         while checkNeighborMethod(iterating_index) is not None:
             # change iterating_index to the position of the next upper neighbor
-            iterating_index += incrementIteratorBy
-
+            iterating_index += step
+            tile = self.board[iterating_index]
             if not hasFoundOpponentPiece:
-                if self.board[iterating_index] is None or self.board[iterating_index] is color:
+                if tile is None or tile is color:
                     return False
-                elif self.board[iterating_index] is not color:
+                elif tile is not color:
                     hasFoundOpponentPiece = True
             else:
-                if self.board[iterating_index] is None:
+                if tile is None:
                     return False
-                elif self.board[iterating_index] is color:
+                elif tile is color:
                     return True
 
         # if we have iterated over all upper neighbors but haven't found an ally piece following enemy pieces,

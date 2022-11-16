@@ -193,7 +193,6 @@ class Board:
         positions and a black position.
         """
         # TODO : this method represents ~66% of the entire game's time if we add up all calls to it
-        print(f"Checked if {index} is playable by direction {direction}")
         # check if the position is available
         if self.board[index] is not None:
             return False

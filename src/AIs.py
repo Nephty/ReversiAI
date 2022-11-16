@@ -58,8 +58,12 @@ class AI:
         # We then end up with a list of the moves with the highest estimated score and choose one randomly.
         possible_moves = []
         max_score = 0
-        positions_method = game.getWhitePlayablePositions if self.color else game.getBlackPlayablePositions
-        for index in positions_method():
+        detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
+        playable_positions = []
+        for position in range(len(detailed_positions)):
+            if True in detailed_positions[position]:
+                playable_positions.append(position)
+        for index in playable_positions:
             if self.heatmap[index] > max_score:
                 max_score = self.heatmap[index]
                 possible_moves = [index]
@@ -138,4 +142,9 @@ class RandomAI:
         """Takes a decision based on the current state of the game.
         Process : choose a random move.
         Returns a numerical value based on the conventions."""
-        return choice(game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions())
+        detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
+        playable_positions = []
+        for position in range(len(detailed_positions)):
+            if True in detailed_positions[position]:
+                playable_positions.append(position)
+        return choice(playable_positions)

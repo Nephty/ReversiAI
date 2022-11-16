@@ -31,7 +31,7 @@ board_length = 8
 whiteBot = AI(color=True, board_length=8)
 blackBot = RandomAI(color=False)
 ai_wins = 0
-n = 1
+n = 500
 begin = time()
 
 for i in range(1, n+1):
@@ -39,24 +39,23 @@ for i in range(1, n+1):
     game = Game()  # ~ 1ms to create the board
     playing = True
     turn = True  # color of whose turn it is
-    verbose = True
+    verbose = False
+    if verbose:
+        print(game)
+
     while playing:
-        print("\n"*20)
-        print("SPACER")
-        if turn:
-            # takeDecision represents ~1% of computational time whereas playMove represents ~99%
-            if len(game.getWhitePlayablePositions()) > 0:
+
+        if len(game.getPlayableIndices(turn)) > 0:
+            if turn:
                 decision = whiteBot.takeDecision(game)
-                print("took decision") # TODO DOUBLE CALL TO CHECK PLAYABLE ? RUN AND SEE CONSOLE, SEEMS TO BE RAN TWICE IN PLAY MOVE
-                game.playMove(decision, True, verbose=verbose)
-                print("played move")
-        else:
-            if len(game.getBlackPlayablePositions()) > 0:
+            else:
                 decision = blackBot.takeDecision(game)
-                print("took decision")
-                game.playMove(decision, False, verbose=verbose)
-                print("played move")
+            game.playMove(decision, turn, verbose=verbose)
         turn = not turn
+
+        if verbose:
+            print(game)
+
         if game.isFinished():
             playing = False
             winner = game.conclude(verbose=verbose)

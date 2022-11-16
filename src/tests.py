@@ -123,11 +123,6 @@ def testIsPlayableByDirection():
     game.board[-2] = None
     game.board[-1] = None
 
-
-step = - 8
-for i in range(16, -1, step):
-    print(i)
-
 """
 print()
 testGetUpperNeighbor()

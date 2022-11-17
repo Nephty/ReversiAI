@@ -123,6 +123,7 @@ def testIsPlayableByDirection():
     game.board[-2] = None
     game.board[-1] = None
 
+
 """
 print()
 testGetUpperNeighbor()

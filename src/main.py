@@ -31,12 +31,12 @@ board_length = 8
 whiteBot = AI(color=True, board_length=8)
 blackBot = RandomAI(color=False)
 ai_wins = 0
-n = 500
+n = 2000
 begin = time()
 
 for i in range(1, n+1):
     print(i)
-    game = Game()  # ~ 1ms to create the board
+    game = Game()
     playing = True
     turn = True  # color of whose turn it is
     verbose = False
@@ -44,7 +44,6 @@ for i in range(1, n+1):
         print(game)
 
     while playing:
-
         if len(game.getPlayableIndices(turn)) > 0:
             if turn:
                 decision = whiteBot.takeDecision(game)

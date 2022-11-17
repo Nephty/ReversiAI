@@ -29,8 +29,7 @@ class Board:
                     self.whiteCount += 1
                 else:
                     self.blackCount += 1
-        self.whitePlayablePositionsByDirection = self.getWhitePlayablePositionsByDirection()
-        self.blackPlayablePositionsByDirection = self.getBlackPlayablePositionsByDirection()
+        self.whitePlayablePositionsByDirection, self.blackPlayablePositionsByDirection = self.updateBothPlayersPlayablePositionsByDirections()
 
     def __setitem__(self, key, value):
         # if the tile is not empty, we are changing the color of the piece on it (we are capturing it)
@@ -70,51 +69,19 @@ class Board:
         step = - self.length
         col.append(i for i in range(index + step, -1, step))
 
-    def getPlayablePositionsByDirections(self, color: bool) -> list[list[int, ...], ...]:
-        """Returns all playable positions as a list of lists for the given color.
-             list of lists :
-             sublist index = tile index
-             the sublist contains 7 bools, corresponding to "is it playable from direction i ?" if we're looking at bool i
-             example :
-             [[True, True, False, False, False, False, False, False]] means the board has one tile and the tile at index 0
-             is playable from two directions : upper (index 0 is True) and upper right (index 1 is True)"""
-        if color:
-            return self.getWhitePlayablePositionsByDirection()
-        return self.getBlackPlayablePositionsByDirection()
-
-    def getWhitePlayablePositionsByDirection(self) -> list[list[int, ...], ...]:
-        """Returns all positions that are playable by the white player.
-             list of lists :
-             sublist index = tile index
-             the sublist contains 7 bools, corresponding to "is it playable from direction i ?" if we're looking at bool i
-             example :
-             [[True, True, False, False, False, False, False, False]] means the board has one tile and the tile at index 0
-             is playable from two directions : upper (index 0 = True) and upper right (index 1 = True)
-        """
-        playable_indices = []
+    def updateBothPlayersPlayablePositionsByDirections(self) -> [list, list]:
+        white_p_i_by_dir = []
+        black_p_i_by_dir = []
         for index in range(self.length ** 2):
-            playable_directions = []
+            white_p_d = []
+            black_p_d = []
             for direction in [0, 1, 2, 3, 4, 5, 6, 7]:
-                playable_directions.append(self._isPlayableByDirection(index, True, direction))
-            playable_indices.append(playable_directions)
-        return playable_indices
-
-    def getBlackPlayablePositionsByDirection(self) -> list[list[int, ...], ...]:
-        """Returns all positions that are playable by the black player.
-             list of lists :
-             sublist index = tile index
-             the sublist contains 7 bools, corresponding to "is it playable from direction i ?" if we're looking at bool i
-             example :
-             [[True, True, False, False, False, False, False, False]] means the board has one tile and the tile at index 0
-             is playable from two directions : upper (index 0 = True) and upper right (index 1 = True)
-        """
-        playable_indices = []
-        for index in range(self.length ** 2):
-            playable_directions = []
-            for direction in [0, 1, 2, 3, 4, 5, 6, 7]:
-                playable_directions.append(self._isPlayableByDirection(index, False, direction))
-            playable_indices.append(playable_directions)
-        return playable_indices
+                is_playable_dict = self._isPlayableByDirectionByBothPlayers(index, direction)
+                white_p_d.append(is_playable_dict[0])
+                black_p_d.append(is_playable_dict[1])
+            white_p_i_by_dir.append(white_p_d)
+            black_p_i_by_dir.append(black_p_d)
+        return white_p_i_by_dir, black_p_i_by_dir
 
     def getPlayableIndices(self, color):
         """Returns all playable positions as indices for the given color following the board convention."""
@@ -192,10 +159,9 @@ class Board:
         We use a method we'll call 'quick removal' where we check all the neighbors of the cell, and if they are None,
         we won't even bother calling the _isPlayableByDirection method upon them to reduce computational time.
         """
-        for direction in [0, 1, 2, 3, 4, 5, 6, 7]:
-            if self._isPlayableByDirection(index, color, direction):
-                return True
-        return False
+        if color:
+            return True in self.whitePlayablePositionsByDirection[index]
+        return True in self.blackPlayablePositionsByDirection[index]
 
     def _matchDirectionToCheckNeighborMethodAndIteratorIncrement(self, direction: int) -> tuple[callable, int]:
         checkNeighborMethod = None
@@ -226,11 +192,13 @@ class Board:
             incrementIteratorBy = - self.length - 1
         return checkNeighborMethod, incrementIteratorBy
 
-    def _isPlayableByDirection(self, index: int, color: bool, direction: int) -> bool:
-        """Checks if the cell at the given index is playable by the player with the given color by checking the given
+    def _isPlayableByDirectionByBothPlayers(self, index: int, direction: int) -> (bool, bool):
+        """Checks if the cell at the given index is playable by both player with the given color by checking the given
         direction. Checking the given direction means that we look at the row/column in the given direction and check
         if it allows for a move, that is, if it contains an alignment of positions owned by the other player and one
         position owned by the current player.
+        Returns a dictionary with two entries who have True and False as keys (the colors). The corresponding bool value
+        tells whether the tile is playable by the key color.
 
         Example :
         Checking the left direction :
@@ -238,10 +206,9 @@ class Board:
         The X position is playable by the black color, because it is followed on the left by an alignment of white
         positions and a black position.
         """
-        # TODO : this method represents ~66% of the entire game's time if we add up all calls to it
         # check if the position is available
         if self.board[index] is not None:
-            return False
+            return False, False
 
         # the right method to check for neighbors
         # and how the iterator will vary (go up, right, down or left by changing the index)
@@ -249,36 +216,55 @@ class Board:
 
         # check that there is at least two neighbors in the given direction
         if checkNeighborMethod(index) is None:
-            return False
+            return False, False
         if checkNeighborMethod(checkNeighborMethod(index)) is None:
-            return False
+            return False, False
 
         iterating_index = index
-        hasFoundOpponentPiece = False
+        hasFoundWhitePiece = False
+        hasFoundBlackPiece = False
+        whiteIsEligible = True
+        blackIsEligible = True
+        # After testing the three methods listed below, using variables was found to be the most efficient one
+        # score is measured as relative performance compared to the best method
+        # using a two-entries dictionary had a score of 63.3%
+        # using a two-entries list had a score of 84.4%
+        # using two variables had a score of 100%
+        playable_by_white, playable_by_black = False, False
 
         # iterate over all neighbors in the given direction :
         # if we encounter an opponent piece, mark it down in a boolean variable
         # if we encounter an allied piece :
         #   - if we have already encountered an enemy  : original position is playable !
         #   - if we have not encountered any enemy yet : original position is not playable :(
+        # TODO : can we set both values to False and remove
+        #  a) the if statements that set the values as False
+        #  b) the ending statement that sets values to False if they are None
+        # TODO : also try to optimize this method since dicts might slow things down compared to a list or two vars
         while checkNeighborMethod(iterating_index) is not None:
             # change iterating_index to the position of the next upper neighbor
             iterating_index += step
             tile = self.board[iterating_index]
-            if not hasFoundOpponentPiece:
-                if tile is None or tile is color:
-                    return False
-                elif tile is not color:
-                    hasFoundOpponentPiece = True
-            else:
-                if tile is None:
-                    return False
-                elif tile is color:
-                    return True
+            # checking for white
+            if not hasFoundBlackPiece:
+                if not tile:
+                    hasFoundBlackPiece = True
+                else:
+                    whiteIsEligible = False  # if we find a white piece before a black piece, the tile is not playable
+            elif whiteIsEligible:
+                if tile:
+                    playable_by_white = True
+            # checking for black
+            if not hasFoundWhitePiece:
+                if tile:
+                    hasFoundWhitePiece = True
+                else:
+                    blackIsEligible = False  # if we find a black piece before a white piece, the tile is not playable
+            elif blackIsEligible:
+                if not tile:
+                    playable_by_black = True
 
-        # if we have iterated over all upper neighbors but haven't found an ally piece following enemy pieces,
-        # the position is not playable
-        return False
+        return playable_by_white, playable_by_black
 
     def playMove(self, index: int, color: bool) -> None:
         """Plays the given move : places a piece of the given color at the given index.
@@ -309,18 +295,6 @@ class Board:
                 # change iterating_index to the position of the next upper neighbor
                 iterating_index += incrementIteratorBy
                 flip_indices.append(iterating_index)
-        """
-        for playable_direction in playable_directions:
-            
-            checkNeighborMethod, incrementIteratorBy = self._matchDirectionToCheckNeighborMethodAndIteratorIncrement(
-                playable_direction)
-            iterating_index = index
-            opponent_color = False if color else True
-            while checkNeighborMethod(iterating_index) is not None and self.board[checkNeighborMethod(iterating_index)] is opponent_color:
-                # change iterating_index to the position of the next upper neighbor
-                iterating_index += incrementIteratorBy
-                flip_indices.append(iterating_index)
-        """
 
         # flip every neighbor that we marked just before
         for flip_index in flip_indices:
@@ -328,7 +302,6 @@ class Board:
 
         # put down a new piece (the played move)
         self[index] = color
-        # TODO : most costly operation (~75% of the method execution time is spent here)
         self.updatePlayablePositions()
 
     def isFull(self):
@@ -337,8 +310,7 @@ class Board:
 
     def updatePlayablePositions(self):
         """Updates the locally stored playable positions as to relieve computational load."""
-        self.whitePlayablePositionsByDirection = self.getWhitePlayablePositionsByDirection()
-        self.blackPlayablePositionsByDirection = self.getBlackPlayablePositionsByDirection()
+        self.whitePlayablePositionsByDirection, self.blackPlayablePositionsByDirection = self.updateBothPlayersPlayablePositionsByDirections()
 
 
 class Game:

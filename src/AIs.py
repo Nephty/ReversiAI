@@ -121,8 +121,8 @@ class WeightedAI:
         # note that in both lists, move of index i corresponds to the score of index i
         # this will be useful when picking the moves with the highest score when there are multiple moves with the
         #   highest estimated score
-        positions_method = game.getWhitePlayablePositions if self.color else game.getBlackPlayablePositions
-        for index in positions_method():
+        positions = game.getPlayableIndices(self.color)
+        for index in positions:
             possible_moves.append([self.heatmap[index], index])
         return choices([move[1] for move in possible_moves], weights=[move[0] for move in possible_moves])[0]
 

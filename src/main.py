@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 
 
 board_length = 8
-whiteBot = AI(color=True, board_length=8)
+whiteBot = WeightedAI(color=True, board_length=8)
 blackBot = RandomAI(color=False)
 ai_wins = 0
 n = 2000

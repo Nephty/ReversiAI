@@ -22,16 +22,15 @@ A white/black position is a tile of the board containing a white/black piece.
 """
 
 from gameobjects import Game, Board
-from AIs import AI, RandomAI, WeightedAI
+from AIs import HeatmapAI, RandomAI, WeightedAI, HeatmapPriorityAI
 from time import time
-import matplotlib.pyplot as plt
 
 
 board_length = 8
-whiteBot = WeightedAI(color=True, board_length=8)
+whiteBot = HeatmapPriorityAI(color=True, board_length=8)
 blackBot = RandomAI(color=False)
 ai_wins = 0
-n = 2000
+n = 10000
 begin = time()
 
 for i in range(1, n+1):

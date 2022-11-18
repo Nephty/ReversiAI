@@ -3,7 +3,7 @@ from random import choice, choices
 from random import randint
 
 
-class AI:
+class HeatmapAI:
     """
     First AI.
     Decision making process :
@@ -69,6 +69,35 @@ class AI:
                 possible_moves = [index]
             elif self.heatmap[index] == max_score:
                 possible_moves.append(index)
+        if len(possible_moves) == 1:
+            return possible_moves[0]
+        else:
+            return choice(possible_moves)
+
+
+class HeatmapPriorityAI(HeatmapAI):
+    def __init__(self, color: bool, board_length: int):
+        super(HeatmapPriorityAI, self).__init__(color, board_length)
+
+    # TODO : make a getPossibleMoves common method (to all AIs ?)
+    def takeDecision(self, game: Game):
+        possible_moves = []
+        max_score = 0
+        detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
+        playable_positions = []
+        for position in range(len(detailed_positions)):
+            if True in detailed_positions[position]:
+                playable_positions.append(position)
+        for index in playable_positions:
+            if self.heatmap[index] > max_score:
+                max_score = self.heatmap[index]
+                possible_moves = [index]
+            elif self.heatmap[index] == max_score:
+                possible_moves.append(index)
+        for index in possible_moves:
+            enemy_positions = game.getBlackPlayablePositions() if self.color else game.getWhitePlayablePositions()
+            if True in game.getBlackPlayablePositions()[index]:
+                return index
         if len(possible_moves) == 1:
             return possible_moves[0]
         else:

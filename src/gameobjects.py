@@ -52,7 +52,7 @@ class Board:
     def __str__(self):
         """Returns the board as a nicely formatted string."""
         board_as_str = ""
-        empty = " "
+        empty = "-"
         white = "◉"
         black = "○"
         for i in range(len(self.board)):
@@ -170,7 +170,7 @@ class Board:
             checkNeighborMethod = self.getUpperNeighbor
             incrementIteratorBy = - self.length
         elif direction == 1:
-            checkNeighborMethod = self.getUpperNeighbor
+            checkNeighborMethod = self.getUpperRightNeighbor
             incrementIteratorBy = - self.length + 1
         elif direction == 2:
             checkNeighborMethod = self.getRightNeighbor

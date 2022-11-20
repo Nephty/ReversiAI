@@ -5,14 +5,14 @@ from random import randint
 
 class HeatmapAI:
     """
-    First AI.
+    Heatmap AI.
     Decision making process :
       1) Compute all possible moves ;
       2) Keep all moves with the highest heuristic (estimated score,
          how much it would benefit us if we played on a tile) ;
       3) Randomly choose one of the tiles from step 2).
     """
-    def __init__(self, color: bool, board_length: int):
+    def __init__(self, color: bool, board_length: int = 8):
         self.heatmap = []
         max_index = board_length - 1
         for line_index in range(board_length):
@@ -42,10 +42,7 @@ class HeatmapAI:
                     self.heatmap.append(0.7)
         self.color = color
 
-    def takeDecision(self, game: Game):
-        """Takes a decision based on the current state of the game.
-        Process : choose one of the moves that has the highest estimated score (heuristic).
-        Returns a numerical value based on the conventions."""
+    def getBestPossibleMoves(self, game: Game):
         # How does it work ? Glad you asked !
         # The objective is to only list the moves with the highest estimated score. Why ? Doing so, we don't have to
         # compute the maximum of the scores, then keep the moves with this score and finally choose one of them.
@@ -55,7 +52,7 @@ class HeatmapAI:
         # estimated score, we update max_score and dump every previously stored move (they sucked anyway) and we'll only
         # keep the current move. If the move has a score that is equal to max_score, it's one of the best move at the
         # moment ! We'll keep it warm in the list of possible moves.
-        # We then end up with a list of the moves with the highest estimated score and choose one randomly.
+        # We then end up with a list of the moves with the highest estimated score.
         possible_moves = []
         max_score = 0
         detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
@@ -69,6 +66,13 @@ class HeatmapAI:
                 possible_moves = [index]
             elif self.heatmap[index] == max_score:
                 possible_moves.append(index)
+        return possible_moves
+
+    def takeDecision(self, game: Game):
+        """Takes a decision based on the current state of the game.
+        Process : choose one of the moves that has the highest estimated score (heuristic).
+        Returns a numerical value based on the conventions."""
+        possible_moves = self.getBestPossibleMoves(game)
         if len(possible_moves) == 1:
             return possible_moves[0]
         else:
@@ -76,27 +80,23 @@ class HeatmapAI:
 
 
 class HeatmapPriorityAI(HeatmapAI):
-    def __init__(self, color: bool, board_length: int):
+    """
+    Heatmap Priority AI.
+    Decision making process :
+      1) Compute all possible moves ;
+      2) Keep all moves with the highest heuristic (estimated score,
+         how much it would benefit us if we played on a tile) ;
+      3) If the enemy can play one of these moves, we shall play the first one we encounter ;
+      4) Otherwise, randomly choose one of the tiles from step 2).
+    """
+    def __init__(self, color: bool, board_length: int = 8):
         super(HeatmapPriorityAI, self).__init__(color, board_length)
 
-    # TODO : make a getPossibleMoves common method (to all AIs ?)
     def takeDecision(self, game: Game):
-        possible_moves = []
-        max_score = 0
-        detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
-        playable_positions = []
-        for position in range(len(detailed_positions)):
-            if True in detailed_positions[position]:
-                playable_positions.append(position)
-        for index in playable_positions:
-            if self.heatmap[index] > max_score:
-                max_score = self.heatmap[index]
-                possible_moves = [index]
-            elif self.heatmap[index] == max_score:
-                possible_moves.append(index)
+        possible_moves = self.getBestPossibleMoves(game)
         for index in possible_moves:
             enemy_positions = game.getBlackPlayablePositions() if self.color else game.getWhitePlayablePositions()
-            if True in game.getBlackPlayablePositions()[index]:
+            if True in enemy_positions[index]:
                 return index
         if len(possible_moves) == 1:
             return possible_moves[0]
@@ -104,42 +104,71 @@ class HeatmapPriorityAI(HeatmapAI):
             return choice(possible_moves)
 
 
-class WeightedAI:
+class HindranceAI(HeatmapPriorityAI):
     """
-    Second AI.
+    Hindrance AI.
+    Decision making process :
+      1) Compute all possible moves of the enemy ;
+      2) Order these move according to their heuristic (estimated score,
+         how much it would benefit us if we played on a tile) but only keep those who have a score
+         of at least the score of a tile on the edge (this means we will only play on enemy playable
+         tiles that are corners, edges and before last edges ;
+      3) If the enemy can play one of these moves, we shall play the first one we encounter (because
+         they are sorted) ;
+      4) If none of the enemy tiles are playable, follow the Heatmap Priority AI decision method.
+    """
+    def __init__(self, color: bool, board_length: int = 8):
+        super(HindranceAI, self).__init__(color, board_length)
+
+    def getOrderedEnemyAndOwnPossibleMoves(self, game: Game):
+        # I honestly have no idea how to name the vars so I gave them explicit names
+        enemy_playable_indices = game.getPlayableIndices(not self.color)
+        my_playable_indices = game.getPlayableIndices(self.color)
+
+        my_playable_indices_and_score = [(index, self.heatmap[index]) for index in my_playable_indices]
+        my_playable_indices_and_score_sorted = sorted(my_playable_indices_and_score, key=lambda x:x[1], reverse=True)
+
+        min_score_for_steal = self.heatmap[2]
+        enemy_playable_indices_that_i_can_play = list(set(enemy_playable_indices) & set(my_playable_indices))
+        enemy_playable_indices_and_score_that_i_can_play_and_will_steal = [(index, self.heatmap[index]) for index in enemy_playable_indices_that_i_can_play if self.heatmap[index] >= min_score_for_steal]
+        enemy_playable_indices_and_score_that_i_can_play_and_will_steal_sorted = sorted(enemy_playable_indices_and_score_that_i_can_play_and_will_steal, key=lambda x:x[1], reverse=True)
+
+        enemy_corners = []
+        enemy_other_positions = []
+        my_corners = []
+        my_other_positions = []
+
+        for move_index, move_score in enemy_playable_indices_and_score_that_i_can_play_and_will_steal_sorted:
+            if move_score >= self.heatmap[0]:
+                enemy_corners.append(move_index)
+            else:
+                enemy_other_positions.append(move_index)
+
+        for move_index, move_sore in my_playable_indices_and_score_sorted:
+            if move_sore >= self.heatmap[0]:
+                my_corners.append(move_index)
+            else:
+                my_other_positions.append(move_index)
+
+        return enemy_corners + enemy_other_positions + my_corners + my_other_positions
+
+    def takeDecision(self, game: Game):
+#        my_possible_moves = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
+        return self.getOrderedEnemyAndOwnPossibleMoves(game)[0]
+#        return super(HindranceAI, self).takeDecision(game)
+
+
+# TODO : todo : choisir un move parmis les meilleurs de l'ennemi (on les classe décroissant par score de l'ennemi et on choisit le premier possible)
+
+class WeightedAI(HeatmapAI):
+    """
+    Weighted AI.
     Decision making process :
       1) Compute all possible moves ;
       2) Randomly choose a move from step 1) with weighted probabilities according to their heuristic.
     """
-    def __init__(self, color: bool, board_length: int):
-        self.heatmap = []
-        max_index = board_length - 1
-        for line_index in range(board_length):
-            for column_index in range(board_length):
-                # Corners = 1 (found trying all combinations)
-                if (line_index, column_index) in [(0, 0), (0, max_index), (max_index, 0),
-                                                  (max_index, max_index)]:
-                    self.heatmap.append(1)
-                # Next to corner = 0.2 (found trying all combinations)
-                elif (line_index, column_index) in [(0, 1), (1, 0),
-                                                    (0, max_index - 1), (1, max_index),
-                                                    (max_index - 1, 0), (max_index, 1),
-                                                    (max_index, max_index - 1), (max_index - 1, max_index)]:
-                    self.heatmap.append(0.2)
-                # Diagonally next to corner = 0 (found trying all combinations)
-                elif (line_index, column_index) in [(1, 1), (1, max_index - 1), (max_index - 1, 1),
-                                                    (max_index - 1, max_index - 1)]:
-                    self.heatmap.append(0.2)
-                # Remaining on edges = 0.3 (found trying all combinations)
-                elif line_index == 0 or line_index == max_index or column_index == 0 or column_index == max_index:
-                    self.heatmap.append(0.6)
-                # Remaining on second/before last edges = 0.6 (found trying all combinations)
-                elif line_index == 1 or line_index == max_index - 1 or column_index == 1 or column_index == max_index - 1:
-                    self.heatmap.append(0.6)
-                # 0.4
-                else:
-                    self.heatmap.append(0.4)
-        self.color = color
+    def __init__(self, color: bool, board_length: int = 8):
+        super(WeightedAI, self).__init__(color, board_length)
 
     def takeDecision(self, game: Game):
         """Takes a decision based on the current state of the game.

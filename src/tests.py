@@ -123,6 +123,8 @@ def testIsPlayableByDirection():
     game.board[-2] = None
     game.board[-1] = None
 
+print(sorted([[1, 2], [2, 3], [3, 4]], key=lambda x:x[1]))
+print([1, 2] + [3, 4])
 
 """
 print()

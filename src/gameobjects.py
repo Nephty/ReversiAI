@@ -338,17 +338,9 @@ class Board:
         :param color: the move's color
         :return: a Board object resulting of the move
         """
-        t1a = time()
         board_lst_copy = list(self.board)
-        t1b = time()
         board_copy = Board(board_lst_copy)
-        t1c = time()
         board_copy.playMove(index, color)
-        t1d = time()
-        print((t1b - t1a)/max((t1b-t1a), (t1c-t1b), (t1d-t1c)))
-        print((t1c - t1b)/max((t1b-t1a), (t1c-t1b), (t1d-t1c)))
-        print((t1d - t1c)/max((t1b-t1a), (t1c-t1b), (t1d-t1c)))
-        print()
         return board_copy
 
 

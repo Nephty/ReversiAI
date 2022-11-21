@@ -22,23 +22,23 @@ A white/black position is a tile of the board containing a white/black piece.
 """
 
 from gameobjects import Game, Board
-from AIs import Human, HeatmapAI, RandomAI, WeightedAI, HeatmapPriorityAI, HindranceAI, EvaluatingAI
+from AIs import Human, HeatmapAI, RandomAI, WeightedAI, HeatmapPriorityAI, HindranceAI, GreedyAI, MoveDeprivingAI
 from time import time
 
 
 board_length = 8
-white = Human(color=True)
-black = HindranceAI(color=False)
+white = MoveDeprivingAI(color=True)
+black = RandomAI(color=False)
 ai_wins = 0
-n = 1
+n = 2000
 begin = time()
 
 for i in range(1, n+1):
     print(i)
     game = Game()
     playing = True
-    turn = True  # color of whose turn it is
-    verbose = True
+    turn = False  # color of whose turn it is
+    verbose = False
     if verbose:
         print(game)
 
@@ -49,13 +49,12 @@ for i in range(1, n+1):
             else:
                 decision = black.takeDecision(game)
             game.playMove(decision, turn, verbose=verbose)
-        else:
+        elif verbose:
             print(f"{'White' if turn else 'Black'} skips turn.")
         turn = not turn
 
         if verbose:
             print(game)
-            #print(f"evaluation for white : {whiteBot.evaluateBoard(game)}")
 
         if game.isFinished():
             playing = False

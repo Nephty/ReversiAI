@@ -294,13 +294,43 @@ class HindranceAI(HeatmapAI):
         return self.getOrderedEnemyAndOwnPossibleMoves(game)[0]
 
 
-class EvaluatingAI(HeatmapAI):
+class GreedyAI(HeatmapAI):
+    """
+    Evaluating AI.
+    Decision making process :
+      1) For all possible moves, evaluate how many positions you own after a move
+      2) Play the move that gives you the most positions
+    """
     def __init__(self, color: bool, board_length: int = 8):
-        super(EvaluatingAI, self).__init__(color, board_length)
+        super(GreedyAI, self).__init__(color, board_length)
 
     def takeDecision(self, game: Game):
         possible_moves = game.getPlayableIndices(self.color)
         scores = []
         for move in possible_moves:
             scores.append(self.evaluateBoardMono(game.getBoardResultAfterMove(move, self.color)))
-        return possible_moves[scores.index(max(scores))] # TODO debug and fix
+        return possible_moves[scores.index(max(scores))]
+
+
+class MoveDeprivingAI(HeatmapAI):
+    """
+    Move depriving AI.
+    Decision making process :
+      1) For all possible moves, evaluate how many positions will be playable by the enemy AI.
+      2) If I can play a corner, do so
+      3) If not, play the move that gives the enemy the least playable positions
+    """
+    def __init__(self, color: bool, board_length: int = 8):
+        super(MoveDeprivingAI, self).__init__(color, board_length)
+
+    def takeDecision(self, game: Game):
+        possible_moves = game.getPlayableIndices(self.color)
+        number_of_enemy_possible_moves = []
+        currently_possible_moves = len(game.getPlayableIndices(not self.color))
+        for move in possible_moves:
+            step = game.getBoardResultAfterMove(move, self.color)
+            new_number_of_possible_moves = len(step.getPlayableIndices(not self.color))
+            number_of_enemy_possible_moves.append(new_number_of_possible_moves - currently_possible_moves)
+            if self.heatmap[move] == self.heatmap[0]:
+                return move
+        return possible_moves[number_of_enemy_possible_moves.index(min(number_of_enemy_possible_moves))]

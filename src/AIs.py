@@ -1,6 +1,69 @@
-from gameobjects import Game
+from gameobjects import Game, Board
 from random import choice, choices
 from random import randint
+from re import match
+
+
+class Human:
+    def __init__(self, color: bool, board_length: int = 8):
+        self.color = color
+        self.board_length = board_length
+
+    def formatInputToIndex(self, game: Game, move: str):
+        if move.startswith('('):
+            move = move[1:]
+        if move.endswith(')'):
+            move = move[:-1]
+        result = []
+        result.append(int(move.split(",")[0]))
+        result.append(int(move.split(",")[1]))
+        return (result[1] - 1) * game.board.length + result[0] - 1
+
+    # TODO : check if player can play the position lol
+    def takeDecision(self, game: Game) -> int:
+        print(f"{'White' if self.color else 'Black'}'s turn.\n"
+              f"Enter a move in the following format : (a, b) or a, b\n"
+              f"  where a is the column number (from 1 to {self.board_length})\n"
+              f"  and b is the row number (from 1 to {self.board_length})")
+        input_message = ">> "
+        move = input(input_message)
+        repeat_input = True
+        move_index = -1
+        while repeat_input:
+            detailed_playable_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
+            if match("\(?[0-9]+,\s+[0-9]+\)?", move):
+                move_index = self.formatInputToIndex(game, move)
+                if True in detailed_playable_positions[move_index]:
+                    repeat_input = False
+                else:
+                    print("Sorry, invalid move.")
+            else:
+                print("Sorry, couldn't read your move.")
+            move = input(input_message)
+        return move_index
+
+
+class RandomAI:
+    """
+    Randomly choosing AI. Reference for evaluation (considered to be the "worst" AI, or at least I think my AIs will
+    never be worse than a randomly choosing AI. If so, I'm quitting this project).
+    Decision making process :
+      1) Compute all possible moves ;
+      2) Randomly choose one of the moves from step 1) following a uniform law.
+    """
+    def __init__(self, color: bool):
+        self.color = color
+
+    def takeDecision(self, game: Game):
+        """Takes a decision based on the current state of the game.
+        Process : choose a random move.
+        Returns a numerical value based on the conventions."""
+        detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
+        playable_positions = []
+        for position in range(len(detailed_positions)):
+            if True in detailed_positions[position]:
+                playable_positions.append(position)
+        return choice(playable_positions)
 
 
 class HeatmapAI:
@@ -78,6 +141,81 @@ class HeatmapAI:
         else:
             return choice(possible_moves)
 
+    def evaluatedBoardBi(self, board: Board):
+        """
+        Fully evaluated the board : takes both white and black positions into account.
+        :param board: the ongoing game
+        :return: a score indicating how "good" the game is going : positive score means
+        the game is going good for us, negative score means the game is going good for
+        the opponent. The score's absolute value shows how much the game is in favor of
+        either player.
+        NB : this method isn't located in the Board or Game class because it is considered
+        a "skill" of some AIs and the game is evaluated by the AI and its point of view
+        upon the game. For example : the random AI doesn't have this skill, thus it shouldn't
+        know how to evaluate the board.
+        """
+        score = 0
+        for tile_index in range(len(board)):
+            if board.board[tile_index] is self.color:
+                score += self.heatmap[tile_index]
+            elif board.board[tile_index] is (not self.color):
+                score -= self.heatmap[tile_index]
+        return score
+
+    def evaluateBoardMono(self, board: Board, color: bool = None):
+        """
+        Evaluates the board for a single color. The value of the score will always be
+        positive and indicates how good the game is going for the color.
+        Warning : a score of 1 returned by evaluateBoardMono is not the same as a score
+        of 1 returned by evaluateBoardBi. Mono returns 1 because your positions give you
+        a score of 1, whereas Bi returns 1 because your positions are better than the ones
+        of your opponent by a scalar of 1 (this means that in a game where Bi returns 1,
+        Mono could return 5, 7, 10... ; it all depends on the opponent's positions).
+        NB : this method isn't located in the Board or Game class because it is considered
+        a "skill" of some AIs and the game is evaluated by the AI and its point of view
+        upon the game. For example : the random AI doesn't have this skill, thus it shouldn't
+        know how to evaluate the board.
+        :param board: the ongoing game
+        :param color: the color of the player whose positions will be evaluated. This parameter
+        can be changed for the color of the opponent, since this method enables the AI to
+        evaluated how good the opponent's positions are (the AI is aware of the full board, and not
+        only its positions). None by default means that we evaluated the player upon who this method
+        is called.
+        :return: a score indicating how "good" the player's positions are.
+        """
+        if color is None:
+            color = self.color
+        score = 0
+        for tile_index in range(len(board.board)):
+            if board.board[tile_index] is color:
+                score += self.heatmap[tile_index]
+        return score
+
+
+class WeightedAI(HeatmapAI):
+    """
+    Weighted AI.
+    Decision making process :
+      1) Compute all possible moves ;
+      2) Randomly choose a move from step 1) with weighted probabilities according to their heuristic.
+    """
+    def __init__(self, color: bool, board_length: int = 8):
+        super(WeightedAI, self).__init__(color, board_length)
+
+    def takeDecision(self, game: Game):
+        """Takes a decision based on the current state of the game.
+        Process : choose one of the moves that has the highest estimated score (heuristic).
+        Returns a numerical value based on the conventions."""
+        possible_moves = []
+        # based on the color of the AI, list all possible moves and their estimated score
+        # note that in both lists, move of index i corresponds to the score of index i
+        # this will be useful when picking the moves with the highest score when there are multiple moves with the
+        #   highest estimated score
+        positions = game.getPlayableIndices(self.color)
+        for index in positions:
+            possible_moves.append([self.heatmap[index], index])
+        return choices([move[1] for move in possible_moves], weights=[move[0] for move in possible_moves])[0]
+
 
 class HeatmapPriorityAI(HeatmapAI):
     """
@@ -104,7 +242,7 @@ class HeatmapPriorityAI(HeatmapAI):
             return choice(possible_moves)
 
 
-class HindranceAI(HeatmapPriorityAI):
+class HindranceAI(HeatmapAI):
     """
     Hindrance AI.
     Decision making process :
@@ -153,56 +291,16 @@ class HindranceAI(HeatmapPriorityAI):
         return enemy_corners + enemy_other_positions + my_corners + my_other_positions
 
     def takeDecision(self, game: Game):
-#        my_possible_moves = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
         return self.getOrderedEnemyAndOwnPossibleMoves(game)[0]
-#        return super(HindranceAI, self).takeDecision(game)
 
 
-# TODO : todo : choisir un move parmis les meilleurs de l'ennemi (on les classe décroissant par score de l'ennemi et on choisit le premier possible)
-
-class WeightedAI(HeatmapAI):
-    """
-    Weighted AI.
-    Decision making process :
-      1) Compute all possible moves ;
-      2) Randomly choose a move from step 1) with weighted probabilities according to their heuristic.
-    """
+class EvaluatingAI(HeatmapAI):
     def __init__(self, color: bool, board_length: int = 8):
-        super(WeightedAI, self).__init__(color, board_length)
+        super(EvaluatingAI, self).__init__(color, board_length)
 
     def takeDecision(self, game: Game):
-        """Takes a decision based on the current state of the game.
-        Process : choose one of the moves that has the highest estimated score (heuristic).
-        Returns a numerical value based on the conventions."""
-        possible_moves = []
-        # based on the color of the AI, list all possible moves and their estimated score
-        # note that in both lists, move of index i corresponds to the score of index i
-        # this will be useful when picking the moves with the highest score when there are multiple moves with the
-        #   highest estimated score
-        positions = game.getPlayableIndices(self.color)
-        for index in positions:
-            possible_moves.append([self.heatmap[index], index])
-        return choices([move[1] for move in possible_moves], weights=[move[0] for move in possible_moves])[0]
-
-
-class RandomAI:
-    """
-    Randomly choosing AI. Reference for evaluation (considered to be the "worst" AI, or at least I think my AI will
-    never be worse than a randomly choosing AI. If so, I'm quitting this project).
-    Decision making process :
-      1) Compute all possible moves ;
-      2) Randomly choose one of the moves from step 1) following a uniform law.
-    """
-    def __init__(self, color: bool):
-        self.color = color
-
-    def takeDecision(self, game: Game):
-        """Takes a decision based on the current state of the game.
-        Process : choose a random move.
-        Returns a numerical value based on the conventions."""
-        detailed_positions = game.getWhitePlayablePositions() if self.color else game.getBlackPlayablePositions()
-        playable_positions = []
-        for position in range(len(detailed_positions)):
-            if True in detailed_positions[position]:
-                playable_positions.append(position)
-        return choice(playable_positions)
+        possible_moves = game.getPlayableIndices(self.color)
+        scores = []
+        for move in possible_moves:
+            scores.append(self.evaluateBoardMono(game.getBoardResultAfterMove(move, self.color)))
+        return possible_moves[scores.index(max(scores))] # TODO debug and fix

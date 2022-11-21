@@ -22,15 +22,15 @@ A white/black position is a tile of the board containing a white/black piece.
 """
 
 from gameobjects import Game, Board
-from AIs import HeatmapAI, RandomAI, WeightedAI, HeatmapPriorityAI, HindranceAI
+from AIs import Human, HeatmapAI, RandomAI, WeightedAI, HeatmapPriorityAI, HindranceAI, EvaluatingAI
 from time import time
 
 
 board_length = 8
-whiteBot = HindranceAI(color=True)
-blackBot = RandomAI(color=False)
+white = Human(color=True)
+black = HindranceAI(color=False)
 ai_wins = 0
-n = 10000
+n = 1
 begin = time()
 
 for i in range(1, n+1):
@@ -38,21 +38,24 @@ for i in range(1, n+1):
     game = Game()
     playing = True
     turn = True  # color of whose turn it is
-    verbose = False
+    verbose = True
     if verbose:
         print(game)
 
     while playing:
         if len(game.getPlayableIndices(turn)) > 0:
             if turn:
-                decision = whiteBot.takeDecision(game)
+                decision = white.takeDecision(game)
             else:
-                decision = blackBot.takeDecision(game)
+                decision = black.takeDecision(game)
             game.playMove(decision, turn, verbose=verbose)
+        else:
+            print(f"{'White' if turn else 'Black'} skips turn.")
         turn = not turn
 
         if verbose:
             print(game)
+            #print(f"evaluation for white : {whiteBot.evaluateBoard(game)}")
 
         if game.isFinished():
             playing = False
@@ -68,57 +71,3 @@ print(f"Summary :\n"
       f"{n - ai_wins} wins for the random AI.\n"
       f"\n"
       f"{ai_wins} - {n - ai_wins} => {round(100*ai_wins/n, 2)}% win rate for the AI.")
-
-""""
-for diag_next in range(6):
-    for edge in range(6):
-        for secon_b_last_edge in range(6):
-            for other in range(6):
-                whiteBot = AI(color=True, board_length=8, a=diag_next*modificator, b=edge*modificator,
-                              c=secon_b_last_edge*modificator, d=other*modificator)
-
-                for i in range(n):
-                    board = Board()
-                    game = Game(board=board)
-
-                    playing = True
-                    turn = True  # color of whose turn it is
-                    verbose = False
-
-                    while playing:
-                        if turn:
-                            if len(game.getWhitePlayablePositions()) > 0:
-                                game.playMove(whiteBot.takeDecision(game), True, verbose=verbose)
-                        else:
-                            if len(game.getBlackPlayablePositions()) > 0:
-                                game.playMove(blackBot.takeDecision(game), False, verbose=verbose)
-                        turn = not turn
-                        if game.isFinished():
-                            playing = False
-                            winner = game.conclude(verbose=verbose)
-                            if winner:
-                                ai_wins += 1
-                            else:
-                                random_ai_wins += 1
-
-                res.append([round(ai_wins/n, 2), [diag_next*modificator, edge*modificator, secon_b_last_edge*modificator, other*modificator]])
-                ai_wins = 0
-                random_ai_wins = 0
-                print(res)
-
-end = time()
-res = sorted(res, key=lambda x:x[0])
-print()
-print()
-print()
-print()
-print(end-begin)
-print(res)
-"""
-
-"""
-
-plt.stem([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1], win_rates)
-plt.show()
-"""
-

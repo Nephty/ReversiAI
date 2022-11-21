@@ -1,7 +1,10 @@
 from math import sqrt
 from time import time
+from copy import deepcopy
 
 
+# TODO : make a method that returns what the board would look like if we played this move,
+#  but do not actually play he move
 class Board:
     def __init__(self, board: list = None):
         if board is not None and int(sqrt(len(board))) ** 2 != len(board):
@@ -27,7 +30,7 @@ class Board:
             for i in board:
                 if i:
                     self.whiteCount += 1
-                else:
+                elif (i is False):
                     self.blackCount += 1
         self.whitePlayablePositionsByDirection, self.blackPlayablePositionsByDirection = self.updateBothPlayersPlayablePositionsByDirections()
 
@@ -49,20 +52,36 @@ class Board:
             else:
                 self.blackCount += 1
 
+    def __getitem__(self, item):
+        return self.board[item]
+
     def __str__(self):
         """Returns the board as a nicely formatted string."""
         board_as_str = ""
         empty = "-"
         white = "◉"
         black = "○"
+
+        header = "   "
+        for i in range(self.length):
+            header += f"{1 + i}  "
+        header += "\n"
+        board_as_str += header
+
         for i in range(len(self.board)):
             value = empty if self.board[i] is None else white if self.board[i] else black
             trailing_spaces_count = 3 - len(str(value))
+            if i % self.length == 0:
+                board_as_str += f"{i//self.length + 1}  "
             if (i + 1) % self.length == 0:
                 board_as_str += f"{value}{' ' * trailing_spaces_count}\n"
             else:
                 board_as_str += f"{value}{' ' * trailing_spaces_count}"
+
         return board_as_str
+
+    def __len__(self):
+        return len(self.board)
 
     def getColumnUpwards(self, index):
         col = []
@@ -312,6 +331,26 @@ class Board:
         """Updates the locally stored playable positions as to relieve computational load."""
         self.whitePlayablePositionsByDirection, self.blackPlayablePositionsByDirection = self.updateBothPlayersPlayablePositionsByDirections()
 
+    def getBoardResultAfterMove(self, index: int, color: bool):
+        """
+        Returns what the game would look like after playing the given move.
+        :param index: the move's position on the board
+        :param color: the move's color
+        :return: a Board object resulting of the move
+        """
+        t1a = time()
+        board_lst_copy = list(self.board)
+        t1b = time()
+        board_copy = Board(board_lst_copy)
+        t1c = time()
+        board_copy.playMove(index, color)
+        t1d = time()
+        print((t1b - t1a)/max((t1b-t1a), (t1c-t1b), (t1d-t1c)))
+        print((t1c - t1b)/max((t1b-t1a), (t1c-t1b), (t1d-t1c)))
+        print((t1d - t1c)/max((t1b-t1a), (t1c-t1b), (t1d-t1c)))
+        print()
+        return board_copy
+
 
 class Game:
     def __init__(self, board: Board = None):
@@ -343,7 +382,7 @@ class Game:
         Assumes the move is allowed and doesn't check if it is legal."""
         self.board.playMove(index, color)
         if verbose:
-            print(f"Played move '{'White' if color else 'Black'} on tile {index}'")
+            print(f"Played move '{'White' if color else 'Black'} on tile {(index + 1) % self.board.length}, {(index + 1) // self.board.length}'")
 
     def isFinished(self):
         """Returns whether the game is finished or not (based upon remaining tiles to play upon)."""
@@ -356,3 +395,12 @@ class Game:
         if verbose:
             print(f"{'White wins !' if winner else 'Black wins !' if winner is False else 'Tie !'} - (W >   {self.board.whiteCount} - {self.board.blackCount}   < B)")
         return winner
+
+    def getBoardResultAfterMove(self, index: int, color: bool):
+        """
+        Returns what the game would look like after playing the given move.
+        :param index: the move's position on the board
+        :param color: the move's color
+        :return: a Board object resulting of the move
+        """
+        return self.board.getBoardResultAfterMove(index, color)

@@ -40,7 +40,10 @@ class Human:
             elif move.lower().strip() == "help":
                 helper = HindranceAI(self.color)
                 index = helper.getOrderedEnemyAndOwnPossibleMoves(game)[0]
-                print(f"I suggest you play {(index + 1) % game.board.length + 1}, {(index + 1) // game.board.length + 1}")
+                col = game.board.length % 8
+                if index % game.board.length == 0:
+                    col = game.board.length
+                print(f"I suggest you play {col}, {index // game.board.length + 1}")
             else:
                 print("Sorry, couldn't read your move.")
             if repeat_input:
@@ -222,7 +225,7 @@ class WeightedAI(HeatmapAI):
         return choices([move[1] for move in possible_moves], weights=[move[0] for move in possible_moves])[0]
 
 
-class HeatmapPriorityAI(HeatmapAI):
+class DefensiveHeatmapAI(HeatmapAI):
     """
     Heatmap Priority AI.
     Decision making process :
@@ -233,7 +236,7 @@ class HeatmapPriorityAI(HeatmapAI):
       4) Otherwise, randomly choose one of the tiles from step 2).
     """
     def __init__(self, color: bool, board_length: int = 8):
-        super(HeatmapPriorityAI, self).__init__(color, board_length)
+        super(DefensiveHeatmapAI, self).__init__(color, board_length)
 
     def takeDecision(self, game: Game):
         possible_moves = self.getBestPossibleMoves(game)

@@ -22,7 +22,7 @@ A white/black position is a tile of the board containing a white/black piece.
 """
 
 from gameobjects import Game, Board
-from AIs import Human, HeatmapAI, RandomAI, WeightedAI, HeatmapPriorityAI, HindranceAI, GreedyAI, MoveDeprivingAI
+from AIs import Human, HeatmapAI, RandomAI, WeightedAI, DefensiveHeatmapAI, HindranceAI, GreedyAI, MoveDeprivingAI
 from time import time, sleep
 
 

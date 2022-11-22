@@ -374,7 +374,10 @@ class Game:
         Assumes the move is allowed and doesn't check if it is legal."""
         self.board.playMove(index, color)
         if verbose:
-            print(f"Played move '{'White' if color else 'Black'} on tile {(index + 1) % self.board.length + 1}, {(index + 1) // self.board.length + 1}'")
+            col = self.board.length % 8
+            if index % self.board.length == 0:
+                col = self.board.length
+            print(f"Played move '{'White' if color else 'Black'} on tile {col}, {index // self.board.length + 1}'")
 
     def isFinished(self):
         """Returns whether the game is finished or not (based upon remaining tiles to play upon)."""

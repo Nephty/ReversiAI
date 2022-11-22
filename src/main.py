@@ -30,7 +30,7 @@ board_length = 8
 white = Human(color=True)
 black = HindranceAI(color=False)
 ai_wins = 0
-n = 2000
+n = 10
 begin = time()
 
 for i in range(1, n+1):
@@ -38,7 +38,7 @@ for i in range(1, n+1):
     game = Game()
     playing = True
     turn = False  # color of whose turn it is
-    verbose = False
+    verbose = True
     if verbose:
         print(game)
 

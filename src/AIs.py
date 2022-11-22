@@ -39,7 +39,8 @@ class Human:
                     print("Sorry, invalid move.")
             else:
                 print("Sorry, couldn't read your move.")
-            move = input(input_message)
+            if repeat_input:
+                move = input(input_message)
         return move_index
 
 

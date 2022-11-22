@@ -30,7 +30,7 @@ board_length = 8
 white = Human(color=True)
 black = HindranceAI(color=False)
 ai_wins = 0
-n = 10
+n = 1
 begin = time()
 
 for i in range(1, n+1):

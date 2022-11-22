@@ -37,6 +37,10 @@ class Human:
                     repeat_input = False
                 else:
                     print("Sorry, invalid move.")
+            elif move.lower().strip() == "help":
+                helper = HindranceAI(self.color)
+                index = helper.getOrderedEnemyAndOwnPossibleMoves(game)[0]
+                print(f"I suggest you play {(index + 1) % game.board.length + 1}, {(index + 1) // game.board.length + 1}")
             else:
                 print("Sorry, couldn't read your move.")
             if repeat_input:

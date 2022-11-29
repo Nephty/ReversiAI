@@ -27,14 +27,14 @@ from time import time, sleep
 
 
 board_length = 8
-white = Human(color=True)
-black = HindranceAI(color=False)
+white = RandomAI(color=True)
+black = Human(color=False)
 ai_wins = 0
 n = 1
 begin = time()
 
 for i in range(1, n+1):
-    print(i)
+    # print(i)
     game = Game()
     playing = True
     turn = False  # color of whose turn it is
@@ -59,19 +59,19 @@ for i in range(1, n+1):
         if game.isFinished():
             playing = False
             winner = game.conclude(verbose=verbose)
-            if winner:
+            if not winner:
                 ai_wins += 1
 
         if type(white) == Human and not turn:
-            sleep(1)
+            sleep(2)
         if type(black) == Human and turn:
-            sleep(1)
+            sleep(2)
 
 end = time()
 
 print(f"Summary :\n"
       f"{n} games played over {round(end - begin, 1)} seconds ({round((end - begin)/n, 3)} sec/game).\n"
-      f"{ai_wins} wins for the AI.\n"
-      f"{n - ai_wins} wins for the random AI.\n"
-      f"\n"
-      f"{ai_wins} - {n - ai_wins} => {round(100*ai_wins/n, 2)}% win rate for the AI.")
+      f"{ai_wins} wins for the {type(black)}.\n"
+      f"{n - ai_wins} wins for the {type(white)}.\n"
+      f"\n")
+#      f"{ai_wins} - {n - ai_wins} => {round(100*ai_wins/n, 2)}% win rate for the AI.")

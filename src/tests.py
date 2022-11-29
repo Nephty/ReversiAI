@@ -3,6 +3,8 @@ import random
 from gameobjects import Game, Board
 from time import time
 from random import randint
+from math import log, sqrt
+import matplotlib.pyplot as plt
 
 board_list = [
     None,   None,   None,   None,   None,   None,   None,   None,
@@ -123,7 +125,6 @@ def testIsPlayableByDirection():
     game.board[-2] = None
     game.board[-1] = None
 
-print(int("   2"))
 
 """
 print()

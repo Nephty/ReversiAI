@@ -3,22 +3,26 @@ from time import time
 from copy import deepcopy
 
 
-# TODO : make a method that returns what the board would look like if we played this move,
-#  but do not actually play he move
 class Board:
-    def __init__(self, board: list = None):
-        if board is not None and int(sqrt(len(board))) ** 2 != len(board):
-            raise ValueError("Board length must be a perfect square.")
-        self.board = [
-            None,   None,   None,   None,   None,   None,   None,   None,
-            None,   None,   None,   None,   None,   None,   None,   None,
-            None,   None,   None,   None,   None,   None,   None,   None,
-            None,   None,   None,   True,   False,  None,   None,   None,
-            None,   None,   None,   False,  True,   None,   None,   None,
-            None,   None,   None,   None,   None,   None,   None,   None,
-            None,   None,   None,   None,   None,   None,   None,   None,
-            None,   None,   None,   None,   None,   None,   None,   None
-        ] if board is None else board
+    def __init__(self, board: list or str = None):
+        if board is not None:
+            if type(board) == list:
+                if int(sqrt(len(board))) ** 2 != len(board):
+                    raise ValueError("Board length must be a perfect square.")
+                self.board = board
+            if type(board) == str:
+                self.board = self.decode(board)
+        else:
+            self.board = [
+                None,   None,   None,   None,   None,   None,   None,   None,
+                None,   None,   None,   None,   None,   None,   None,   None,
+                None,   None,   None,   None,   None,   None,   None,   None,
+                None,   None,   None,   True,   False,  None,   None,   None,
+                None,   None,   None,   False,  True,   None,   None,   None,
+                None,   None,   None,   None,   None,   None,   None,   None,
+                None,   None,   None,   None,   None,   None,   None,   None,
+                None,   None,   None,   None,   None,   None,   None,   None
+            ]
         self.length = int(sqrt(len(self.board)))
 
         if board is None:
@@ -83,10 +87,49 @@ class Board:
     def __len__(self):
         return len(self.board)
 
-    def getColumnUpwards(self, index):
-        col = []
-        step = - self.length
-        col.append(i for i in range(index + step, -1, step))
+    def encode(self):
+        """
+        1 = empty cell
+        2 = white cell
+        3 = black cell
+        """
+        repr = ""
+        for i, cell in enumerate(self.board):
+            if cell is None:
+                repr += "1"
+            elif cell:
+                repr += "2"
+            else:
+                repr += "3"
+        return repr
+
+    def decode(self, string: str) -> list:
+        """
+        Decodes a string into a board. Convention : "n" = None, "w" = White, "b" = Black.
+        Example :
+        "nnnwwwbbb" =
+                   1  2  3
+                1  -  -  -
+                2  ◉  ◉  ◉
+                3  ○  ○  ○
+        :param string: the encoded board
+        :return: a board resulting from the encoding
+        """
+        board = []
+        none_bytes = "n"
+        white_bytes = "w"
+        black_bytes = "b"
+        for i in range(len(string)):
+            char = string[i]
+            if char == none_bytes:
+                board.append(None)
+            elif char == white_bytes:
+                board.append(True)
+            elif char == black_bytes:
+                board.append(False)
+            else:
+                raise ValueError(f"Unkown value {char}")
+        return board
 
     def updateBothPlayersPlayablePositionsByDirections(self) -> [list, list]:
         white_p_i_by_dir = []
@@ -352,6 +395,9 @@ class Game:
         """Returns the board of the game as a nicely formatted string."""
         return self.board.__str__()
 
+    def __bytes__(self):
+        return self.board.__bytes__()
+
     def getPlayablePositions(self, color: bool) -> list[list[int, ...], ...]:
         """Returns all playable positions of the board as indices for the given color following the board convention."""
         if color:
@@ -377,6 +423,8 @@ class Game:
             col = self.board.length % 8
             if index % self.board.length == 0:
                 col = self.board.length
+            if col == 0:
+                col += 1
             print(f"Played move '{'White' if color else 'Black'} on tile {col}, {index // self.board.length + 1}'")
 
     def isFinished(self):

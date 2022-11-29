@@ -43,6 +43,8 @@ class Human:
                 col = game.board.length % 8
                 if index % game.board.length == 0:
                     col = game.board.length
+                if col == 0:
+                    col += 1
                 print(f"I suggest you play {col}, {index // game.board.length + 1}")
             else:
                 print("Sorry, couldn't read your move.")
@@ -264,6 +266,7 @@ class HindranceAI(HeatmapAI):
       4) If none of the enemy tiles are playable, follow the Heatmap Priority AI decision method.
     """
     def __init__(self, color: bool, board_length: int = 8):
+        self.x = 0
         super(HindranceAI, self).__init__(color, board_length)
 
     def getOrderedEnemyAndOwnPossibleMoves(self, game: Game):

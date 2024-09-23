@@ -13,14 +13,14 @@ Simple Reversi AIs.
 * Greedy AI : Maximizes the number of tiles it covers.
 * Move depriving AI : Tries to reduce the number of moves the enemy will be able to play.
 
-## AIs performance
-### Fast boys, tested upon 10.000+ games :
-* Random AI : chosen as reference.
-* Weighted AI : ~68.11% win rate against the random AI.
-* Heatmap AI : ~88.91% win rate against the random AI.
-* DefensiveHeatmapAI : ~90.26% win rate against the random AI.
-* Hindrance AI :  ~90.78% win rate against the random AI.
+## Performance
 
-### Slower babies, tested upon 2.000+ games :
-* Greedy AI : ~67.25% win rate against the random AI
-* Move depriving AI : ~71.66% win rate against the random AI
+| AI Type               | Games Tested | Win Rate vs Random AI |
+|-----------------------|--------------|-----------------------|
+| Random AI (Reference)  | 10,000+      | Reference             |
+| Weighted AI            | 10,000+      | ~68.11%               |
+| Heatmap AI             | 10,000+      | ~88.91%               |
+| DefensiveHeatmapAI     | 10,000+      | ~90.26%               |
+| Hindrance AI           | 10,000+      | ~90.78%               |
+| Greedy AI              | 2,000+       | ~67.25%               |
+| Move Depriving AI      | 2,000+       | ~71.66%               |
